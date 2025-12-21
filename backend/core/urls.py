@@ -19,6 +19,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # API endpoints will be added here
-    # path('api/', include('api.urls')),
+    path('api/auth/', include('users.urls')),
 ]
