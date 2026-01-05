@@ -42,3 +42,43 @@ class UserSerializer(serializers.ModelSerializer):
                   'profile_picture', 'user_type', 'date_joined')
         read_only_fields = ('id', 'email', 'date_joined')
 
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Serializer for requesting password reset."""
+    email = serializers.EmailField(required=True)
+
+    def validate_email(self, value):
+        """Validate that email exists in the system."""
+        if not User.objects.filter(email=value).exists():
+            # Don't reveal if email exists for security
+            raise serializers.ValidationError(
+                "If this email exists, a password reset link will be sent."
+            )
+        return value
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Serializer for confirming password reset."""
+    email = serializers.EmailField(required=True)
+    reset_token = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(
+        required=True,
+        write_only=True,
+        validators=[validate_password]
+    )
+    new_password2 = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        """Validate that passwords match."""
+        if attrs['new_password'] != attrs['new_password2']:
+            raise serializers.ValidationError(
+                {"new_password": "Password fields didn't match."}
+            )
+        return attrs
+
+    def validate_reset_token(self, value):
+        """Validate reset token format."""
+        if len(value) < 20:
+            raise serializers.ValidationError("Invalid reset token format.")
+        return value
+
